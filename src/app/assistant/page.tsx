@@ -82,7 +82,7 @@ export default function AssistantPage() {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-7rem)] max-w-3xl flex-col">
+    <div className="mx-auto flex min-h-0 w-full flex-1 max-w-3xl flex-col">
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
         <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white">
