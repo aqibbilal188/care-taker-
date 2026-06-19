@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { Search, Bell, Sparkles } from "lucide-react";
 import { portfolioStats } from "@/lib/data";
+import MobileNav from "./MobileNav";
 
 export default function Topbar() {
   const stats = portfolioStats();
   const alertCount = stats.overdueCompliance + stats.slaAtRisk + stats.unnotifiedVisits;
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-slate-200 bg-white/80 px-5 backdrop-blur">
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur sm:px-5">
       <div className="flex items-center gap-2 lg:hidden">
+        <MobileNav />
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 text-sm font-bold text-white">
           C
         </span>

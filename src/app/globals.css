@@ -60,3 +60,15 @@ body {
 .animate-pulsering {
   animation: pulsering 2s infinite;
 }
+
+@keyframes slidein {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.animate-slidein {
+  animation: slidein 0.25s ease both;
+}

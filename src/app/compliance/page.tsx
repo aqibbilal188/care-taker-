@@ -88,7 +88,7 @@ export default function CompliancePage() {
           {sorted.map((t) => (
             <div
               key={t.id}
-              className="grid grid-cols-1 gap-2 px-5 py-3.5 transition hover:bg-slate-50 md:grid-cols-12 md:items-center md:gap-4"
+              className="flex flex-col gap-1.5 px-5 py-3.5 transition hover:bg-slate-50 md:grid md:grid-cols-12 md:items-center md:gap-4"
             >
               <div className="col-span-5 flex items-center gap-3">
                 <span
