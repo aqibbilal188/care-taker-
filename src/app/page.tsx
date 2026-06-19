@@ -51,7 +51,7 @@ export default function Dashboard() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Operations Overview"
-        subtitle="Real-time visibility across your estate — North & South clusters"
+        subtitle="Real-time visibility across your estate — Dumfries & Galloway"
         action={
           <Link
             href="/assistant"
@@ -67,7 +67,7 @@ export default function Dashboard() {
         <StatCard
           label="Schools"
           value={stats.totalSchools}
-          sub={`${stats.totalPupils.toLocaleString()} pupils`}
+          sub={`${stats.registerTotal} PPM tasks tracked`}
           icon={<Building2 size={20} />}
         />
         <StatCard

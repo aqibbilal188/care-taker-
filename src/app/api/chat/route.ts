@@ -6,6 +6,7 @@ import {
   tickets,
   schools,
   schoolName,
+  REGISTER_TOTAL,
 } from "@/lib/data";
 
 export const runtime = "nodejs";
@@ -64,16 +65,22 @@ async function callGemini(
 }
 
 // --- Scripted fallback (works with zero config / no network) --------------
+// Every answer is derived from the live data — no hard-coded site/job names.
 function fallbackAnswer(q: string): string {
   const t = q.toLowerCase();
+  const byHealth = [...schools].sort((a, b) => a.healthScore - b.healthScore);
+  const worst = byHealth[0];
+  const best = byHealth[byHealth.length - 1];
 
-  if (/(water|legionella|l8)/.test(t)) {
+  if (/(water|legionella|l8|hygiene)/.test(t)) {
     const next = complianceTasks
-      .filter((c) => /water|legionella/i.test(c.title))
+      .filter((c) => /water|legionella|hygiene|calorifier|tmv|tank/i.test(c.title + c.category))
       .sort((a, b) => a.daysOffset - b.daysOffset)[0];
-    return `The next water hygiene task is **${next.title}** at **${schoolName(
-      next.schoolId
-    )}** — ${next.dueLabel}, carried out by ${next.responsible}. Riverside High's monthly Legionella test is the most urgent; I'd confirm Aqua-Safe's attendance today.`;
+    if (next) {
+      return `The most urgent water-hygiene task is **${next.title}** at **${schoolName(
+        next.schoolId
+      )}** — ${next.dueLabel}, assigned to ${next.responsible}. I'd confirm attendance and temperature logging before the visit.`;
+    }
   }
 
   if (/(overdue|late|missed|behind)/.test(t)) {
@@ -81,43 +88,80 @@ function fallbackAnswer(q: string): string {
     const list = od
       .map((c) => `• ${c.title} — ${schoolName(c.schoolId)} (${c.dueLabel})`)
       .join("\n");
-    return `You have **${od.length} overdue compliance tasks**:\n\n${list}\n\nThe Fire Risk Assessment at Riverside High is the priority — an overdue FRA is a legal breach. Want me to escalate it to the responsible contractor?`;
+    const lead = od.find((c) => /fire/i.test(c.title + c.category)) ?? od[0];
+    return `You have **${od.length} overdue compliance task${
+      od.length === 1 ? "" : "s"
+    }**:\n\n${list}\n\n${
+      lead
+        ? `Priority: **${lead.title}** at ${schoolName(
+            lead.schoolId
+          )} — overdue statutory work is a legal and insurance risk. Want me to escalate it to ${lead.responsible}?`
+        : ""
+    }`;
   }
 
   if (/(fire audit|fire risk|fra|fire inspection|prepare)/.test(t)) {
-    return `To prepare for a fire audit:\n\n1. Confirm the Fire Risk Assessment is in date (Riverside High's is **6 days overdue** — fix first).\n2. Check weekly fire alarm test logs are complete.\n3. Verify emergency lighting function tests (Riverside's is overdue).\n4. Ensure fire doors, signage and extinguisher service tags are current.\n5. Have evacuation plans and the latest drill record ready.\n\nI can generate a printable audit-readiness checklist per site if useful.`;
+    const fireOverdue = complianceTasks.filter(
+      (c) => c.urgency === "overdue" && /fire/i.test(c.title + c.category)
+    );
+    const flag = fireOverdue.length
+      ? ` (note: ${fireOverdue
+          .map((c) => `${c.title} at ${schoolName(c.schoolId)} is ${c.dueLabel.toLowerCase()}`)
+          .join("; ")} — clear these first)`
+      : "";
+    return `To prepare for a fire audit:\n\n1. Confirm the Fire Risk Assessment is in date${flag}.\n2. Check weekly fire-alarm test logs are complete.\n3. Verify emergency-lighting function tests are up to date.\n4. Ensure fire doors, signage and extinguisher service tags are current.\n5. Have evacuation plans and the latest drill record ready.\n\nI can generate a printable audit-readiness checklist per site if useful.`;
   }
 
-  if (/(contractor|visit|sprinkler|notif)/.test(t)) {
+  if (/(contractor|visit|sprinkler|notif|coming|tomorrow)/.test(t)) {
     const unnotified = contractorVisits.filter((v) => !v.notified);
-    const list = unnotified
+    const list = (unnotified.length ? unnotified : contractorVisits)
       .map((v) => `• ${v.contractor} — ${v.purpose} at ${schoolName(v.schoolId)} (${v.whenLabel})`)
       .join("\n");
-    return `There ${unnotified.length === 1 ? "is" : "are"} **${
-      unnotified.length
-    } upcoming contractor visit${unnotified.length === 1 ? "" : "s"} the site team hasn't been notified about**:\n\n${list}\n\nThis is exactly the "surprise visit" risk. I can send notifications now via email, SMS, WhatsApp or Teams.`;
+    if (unnotified.length) {
+      return `There ${unnotified.length === 1 ? "is" : "are"} **${
+        unnotified.length
+      } upcoming contractor visit${
+        unnotified.length === 1 ? "" : "s"
+      } the site team hasn't been notified about**:\n\n${list}\n\nThis is exactly the "surprise visit" risk. I can send notifications now via email, SMS, WhatsApp or Teams.`;
+    }
+    return `Upcoming contractor visits:\n\n${list}\n\nAll sites have been notified. Want me to add any of these to the site calendars?`;
   }
 
   if (/(sla|breach|ticket|job|help ?desk|escalat)/.test(t)) {
-    const urgent = [...tickets]
-      .sort((a, b) => a.slaHoursLeft - b.slaHoursLeft)
+    const sorted = [...tickets].sort((a, b) => a.slaHoursLeft - b.slaHoursLeft);
+    const urgent = sorted
       .slice(0, 3)
-      .map(
-        (t) =>
-          `• ${t.id} — ${t.title} (${schoolName(t.schoolId)}): ${t.slaLabel}`
-      )
+      .map((tk) => `• ${tk.id} — ${tk.title} (${schoolName(tk.schoolId)}): ${tk.slaLabel}`)
       .join("\n");
-    return `Highest-risk jobs by SLA:\n\n${urgent}\n\n**HD-4821** (no heating, Science Block) breaches in 4 hours — recommend escalating to Northgas immediately. **HD-4807** has already breached.`;
+    const breached = sorted.filter((tk) => tk.slaHoursLeft < 0);
+    const next = sorted.find((tk) => tk.slaHoursLeft >= 0);
+    const tail = `${
+      next
+        ? `**${next.id}** breaches next (${next.slaLabel.toLowerCase()}) — recommend escalating to ${next.assignedTo} now. `
+        : ""
+    }${
+      breached.length
+        ? `${breached.length} job${breached.length === 1 ? " has" : "s have"} already breached.`
+        : ""
+    }`;
+    return `Highest-risk jobs by SLA:\n\n${urgent}\n\n${tail}`;
   }
 
-  if (/(health|status|overview|how are|summary|worst|risk)/.test(t)) {
-    const list = schools
+  if (/(health|status|overview|how are|summary|worst|risk|attention)/.test(t)) {
+    const list = byHealth
       .map((s) => `• ${s.name}: ${s.healthScore}% (${s.status})`)
       .join("\n");
-    return `Estate health summary:\n\n${list}\n\n**Riverside High** needs attention — 56% health, 3 overdue compliance tasks, a breached roofing SLA and a contractor visit with no site notification. St. Mary's is in great shape at 91%.`;
+    const wOverdue = complianceTasks.filter(
+      (c) => c.schoolId === worst.id && c.urgency === "overdue"
+    ).length;
+    return `Estate health summary (lowest first):\n\n${list}\n\n**${worst.name}** needs the most attention — ${worst.healthScore}% health, ${wOverdue} overdue compliance task${
+      wOverdue === 1 ? "" : "s"
+    } and ${worst.openIncidents} open incident${
+      worst.openIncidents === 1 ? "" : "s"
+    }. **${best.name}** is in great shape at ${best.healthScore}%.`;
   }
 
-  return `I'm your estates operations copilot. I can see live data for ${schools.length} schools — compliance deadlines, contractor visits, help-desk SLAs and incidents.\n\nTry asking:\n• "Which compliance tasks are overdue?"\n• "When is the next water test?"\n• "Which jobs are about to breach SLA?"\n• "How do I prepare for a fire audit?"`;
+  return `I'm your estates operations copilot. I can see live data for ${schools.length} schools across ${schools[0]?.region ?? "your estate"} — ${REGISTER_TOTAL} planned maintenance tasks, plus contractor visits, help-desk SLAs and incidents.\n\nTry asking:\n• "Which compliance tasks are overdue?"\n• "When is the next water test?"\n• "Which jobs are about to breach SLA?"\n• "Which school needs the most attention?"\n• "How do I prepare for a fire audit?"`;
 }
 
 export async function POST(req: NextRequest) {

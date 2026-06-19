@@ -57,6 +57,9 @@ export default function SchoolsPage() {
                   {s.buildings} buildings
                 </div>
               </div>
+              <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-2 text-center text-xs text-slate-500">
+                {s.taskTotal} PPM tasks tracked · {s.statutoryTotal} statutory
+              </div>
               <div className="grid grid-cols-3 divide-x divide-slate-100 border-t border-slate-100 text-center">
                 <Metric
                   icon={<AlertTriangle size={14} />}

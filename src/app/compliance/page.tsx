@@ -3,27 +3,50 @@ import {
   Droplets,
   Plug,
   Wind,
-  ShieldAlert,
-  CheckCircle2,
+  Building,
+  Fan,
+  ArrowUpDown,
+  Wrench,
 } from "lucide-react";
-import { complianceTasks, schoolName, schools } from "@/lib/data";
+import {
+  complianceTasks,
+  schoolName,
+  schools,
+  REGISTER_TOTAL,
+  REGISTER_STATUTORY,
+} from "@/lib/data";
 import { Card, UrgencyBadge, PageHeader, Badge } from "@/components/ui";
 
-const categoryIcon: Record<string, React.ReactNode> = {
-  "Fire Safety": <Flame size={15} />,
-  "Water Hygiene": <Droplets size={15} />,
-  Electrical: <Plug size={15} />,
-  "Gas Safety": <Wind size={15} />,
-  Asbestos: <ShieldAlert size={15} />,
-};
-
-const categoryTone: Record<string, string> = {
-  "Fire Safety": "bg-red-50 text-red-600",
-  "Water Hygiene": "bg-blue-50 text-blue-600",
-  Electrical: "bg-amber-50 text-amber-600",
-  "Gas Safety": "bg-orange-50 text-orange-600",
-  Asbestos: "bg-violet-50 text-violet-600",
-};
+// Maps the real Amey PPM system names to an icon + tone.
+function categoryStyle(category: string): {
+  icon: React.ReactNode;
+  tone: string;
+} {
+  const c = category.toLowerCase();
+  if (c.includes("fire"))
+    return { icon: <Flame size={15} />, tone: "bg-red-50 text-red-600" };
+  if (c.includes("water") || c.includes("plumb") || c.includes("valve"))
+    return { icon: <Droplets size={15} />, tone: "bg-blue-50 text-blue-600" };
+  if (c.includes("gas") || c.includes("boiler") || c.includes("heat"))
+    return { icon: <Wind size={15} />, tone: "bg-orange-50 text-orange-600" };
+  if (c.includes("lift"))
+    return {
+      icon: <ArrowUpDown size={15} />,
+      tone: "bg-violet-50 text-violet-600",
+    };
+  if (c.includes("duct") || c.includes("grille") || c.includes("ventil"))
+    return { icon: <Fan size={15} />, tone: "bg-cyan-50 text-cyan-600" };
+  if (
+    c.includes("power") ||
+    c.includes("electric") ||
+    c.includes("control") ||
+    c.includes("panel")
+  )
+    return { icon: <Plug size={15} />, tone: "bg-amber-50 text-amber-600" };
+  if (c.includes("fabric") || c.includes("building") || c.includes("roof"))
+    return { icon: <Building size={15} />, tone: "bg-slate-100 text-slate-600" };
+  return { icon: <Wrench size={15} />, tone: "bg-emerald-50 text-emerald-600" };
+}
 
 const order = { overdue: 0, critical: 1, soon: 2, ok: 3 };
 
@@ -70,10 +93,10 @@ export default function CompliancePage() {
               <div className="col-span-5 flex items-center gap-3">
                 <span
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                    categoryTone[t.category] ?? "bg-slate-100 text-slate-500"
+                    categoryStyle(t.category).tone
                   }`}
                 >
-                  {categoryIcon[t.category] ?? <CheckCircle2 size={15} />}
+                  {categoryStyle(t.category).icon}
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-slate-900">
@@ -105,8 +128,9 @@ export default function CompliancePage() {
       </Card>
 
       <p className="mt-4 text-center text-xs text-slate-400">
-        Tracking {complianceTasks.length} statutory tasks across{" "}
-        {schools.length} sites · Powered by Caretaker AI compliance engine
+        Live exceptions shown above · Full register: {REGISTER_TOTAL} planned
+        maintenance tasks ({REGISTER_STATUTORY} statutory) across{" "}
+        {schools.length} sites, imported from the Amey PPM schedule
       </p>
     </div>
   );
