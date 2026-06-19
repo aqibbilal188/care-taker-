@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# customer / client data — never commit to the repo
+*.xlsx
+*.xls
+*.csv
+/data/client

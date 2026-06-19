@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Caretaker AI — Demo
 
-## Getting Started
+AI operations assistant for school facilities & estates management. Built with
+Next.js (App Router) + Tailwind CSS. This is a **client-facing demo** running on
+realistic mock data across 3 schools.
 
-First, run the development server:
+## What's in the demo
+
+- **Operations Dashboard** — portfolio stats, live AI alerts, upcoming
+  contractor visits, site health and SLA watch.
+- **Schools** — per-site health cards (incidents, overdue tasks, open jobs).
+- **Compliance Tracker** — statutory tasks (Fire, Legionella, PAT, Gas,
+  Asbestos) with overdue / due-soon / on-track status.
+- **Contractor Coordination** — visit schedule, flags visits the site team
+  hasn't been notified about.
+- **Help Desk & SLA Monitor** — live tickets with SLA breach tracking and
+  escalation.
+- **AI Assistant** — natural-language copilot grounded in the live data,
+  powered by the Google Gemini API.
+
+## Running locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## AI assistant (Gemini)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The assistant calls the Google Gemini API. To enable real AI responses:
 
-## Learn More
+1. Get a key at https://aistudio.google.com/apikey
+2. Copy `.env.local.example` to `.env.local` and set `GEMINI_API_KEY`.
 
-To learn more about Next.js, take a look at the following resources:
+**No key needed for the demo** — if the key is missing or the network fails,
+the assistant automatically falls back to a built-in scripted responder that
+answers the key facilities questions from the live data. It always works.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploying to Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm i -g vercel
+vercel
+```
 
-## Deploy on Vercel
+Add `GEMINI_API_KEY` in the Vercel project's Environment Variables, then
+redeploy. You'll get a shareable URL to send the client.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Data
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+All demo data lives in [`src/lib/data.ts`](src/lib/data.ts) — schools,
+compliance tasks, contractor visits, tickets and alerts. The same module builds
+the context string fed to the AI assistant, so the chat and the dashboards
+always stay in sync. Swap this file for real data/API calls in production.
